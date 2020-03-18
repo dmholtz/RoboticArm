@@ -1,4 +1,5 @@
 from coordinate_tools import Transformation
+from coordinate_tools import Coordinate
 import numpy as np
 
 class Kinematics():
@@ -41,7 +42,7 @@ class Kinematics():
             * ValueError if translation_vector is not a 3x1 numpy vector
         
         """
-        if not Transformation.valid_vector(translation_vector):
+        if not Coordinate.valid_vector(translation_vector):
             raise ValueError('Translation vector must be 3x1 numpy vector')
 
         transformation = Transformation(np.eye(3), translation_vector)
