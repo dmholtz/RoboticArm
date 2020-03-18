@@ -6,7 +6,7 @@ class Transformation():
     """
 
     def __init__(self, rotation_matrix, translation_vector, \
-        check_linear_algebra = True, calc_inverse = True):
+        calc_inverse = True):
         """Initializes a coordinate transformation object.
 
         Accepts a rotation matrix and a translation vector, by which a linear
@@ -17,8 +17,6 @@ class Transformation():
         Args:
             * rotation_matrix (numpy.matrix): a real 3 by 3 orthogonal matrix
             * translation_vector (numpy.array): a real 3 by 1 column vector
-            * check_linear_algebra (bool): (optional) enable / disable linear
-            algebra check
             * calc_inverse (bool): (optional) automatically calculate an
             inverse transformation for this transformation
 
@@ -29,20 +27,18 @@ class Transformation():
             matrix
         """
 
-        if not Transformation.valid_vector(translation_vector):
+        if not Coordinate.valid_vector(translation_vector):
             raise ValueError('Translation vector must be a 3x1 numpy \
                                 array')
-        if not Transformation.valid_matrix(rotation_matrix):
+        if not Coordinate.valid_matrix(rotation_matrix):
             raise ValueError('Rotation matrix must be a 3x3 numpy matrix')
 
-        if check_linear_algebra:
-            if not Transformation.orthogonal_matrix(rotation_matrix):
-                raise LinearAlgebraError('Rotation matrix is not orthogonal \
-                    and can thus not represent a cartesian coordinate system')
+        if not Coordinate.orthogonal_matrix(rotation_matrix):
+            raise LinearAlgebraError('Rotation matrix is not orthogonal \
+                and can thus not represent a cartesian coordinate system')
 
         self.__rotation_matrix = rotation_matrix
         self.__translation_vector = translation_vector
-
         if calc_inverse:
             self.__inverse_transformation = self._calc_inverse_transformation()
 
@@ -57,7 +53,7 @@ class Transformation():
 
         """
         
-        if not Transformation.valid_vector(affine_vector):
+        if not Coordinate.valid_vector(affine_vector):
             raise ValueError('Affine vector must be a 3x1 dimensonal numpy \
                 array')
         
@@ -76,7 +72,7 @@ class Transformation():
 
         """
 
-        if not Transformation.valid_vector(base_vector):
+        if not Coordinate.valid_vector(base_vector):
             raise ValueError('Base vector must be a 3x1 dimensonal numpy \
                 array')
      
@@ -90,9 +86,14 @@ class Transformation():
         inverse_matrix = np.linalg.inv(self.__rotation_matrix)
         inverse_vector = -np.dot(inverse_matrix, self.__translation_vector)
 
-        return Transformation(inverse_matrix, inverse_vector, \
+        return Transformation(inverse_matrix, inverse_vector,
             calc_inverse=False)
-        
+
+class Coordinate():
+    """Provides some useful tools to handle numpy vectors as coordinates.
+
+    """
+    
     @staticmethod
     def valid_vector(vector):
         """Returns true if vector is 3 by 1 dimensional and false otherwise.
