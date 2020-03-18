@@ -90,7 +90,11 @@ class Transformation():
             calc_inverse=False)
 
 class Coordinate():
-    """Provides some useful tools to handle numpy vectors as coordinates.
+    """Provides useful tools to use numpy vectors as coordinate vectors.
+
+    This class is considered to be a toolbox for handling numpy vectors. To
+    ensure maximum compatibility accross standard python libraries, numpy
+    arrays are preferred over proprietary Coordinate objects. 
 
     """
     
