@@ -3,7 +3,7 @@ from coordinate_tools import Coordinate
 import numpy as np
 
 class Kinematics():
-    """Represents a robotic arm's kinematics
+    """Represents a kinematic of a robotic arm's with in-line wrist.
 
     """
 
@@ -47,6 +47,21 @@ class Kinematics():
 
         transformation = Transformation(np.eye(3), translation_vector)
         return cls(transformation)
+
+    def set_joint2_height(self, joint2_height):
+        pass
+
+    def set_joint2_offset(self, joint2_offset):
+        pass
+    
+    def set_armlength2(self, armlength):
+        pass
+
+    def set_armlength3(self):
+        pass
+
+    def set_wrist_length(self, wrist_length):
+        pass
 
     def forward(self, angles):
         pass
