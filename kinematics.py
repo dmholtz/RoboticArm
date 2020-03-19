@@ -1,8 +1,9 @@
 from coordinate_tools import Transformation
+from coordinate_tools import Coordinate
 import numpy as np
 
 class Kinematics():
-    """Represents a robotic arm's kinematics
+    """Represents kinematics of a robotic arm's with an in-line wrist.
 
     """
 
@@ -10,9 +11,9 @@ class Kinematics():
         """Initializes the robots coordinate system.
 
         Args:
-            * inertial_transformation (Transformation): coordinate
-            transformation object, which transfers robot coordinates into
-            world (inertial) coordinates
+            * inertial_transformation (coordinate_tools.Transformation): 
+            coordinate transformation object, which transfers robot coordinates
+            into world (inertial) coordinates
 
         """
         self._inert_transform = inertial_transformation
@@ -41,11 +42,99 @@ class Kinematics():
             * ValueError if translation_vector is not a 3x1 numpy vector
         
         """
-        if not Transformation.valid_vector(translation_vector):
+        if not Coordinate.valid_vector(translation_vector):
             raise ValueError('Translation vector must be 3x1 numpy vector')
 
         transformation = Transformation(np.eye(3), translation_vector)
         return cls(transformation)
+
+    def set_joint2_height(self, joint2_height):
+        """Sets the verticle distance between this robot's COS origin and the
+        second joint.
+
+        Args:
+            * joint2_height (double): joint2_height >= 0
+        
+        Raises:
+            * ValueError: if joint2_height < 0
+
+        """
+        
+        if not joint2_height >= 0:
+            raise ValueError('The verticle distance between this robots COS\
+                origin and the second joint must not be negative.')
+
+        self._joint2_height = joint2_height 
+
+    def set_joint2_offset(self, joint2_offset):
+        """Sets the horizontal offset between the first and the second joint.
+
+        Args:
+            * joint2_offset (double)
+
+        """
+        self._joint2_offset = joint2_offset
+    
+    def set_arm23_length(self, arm23_length):
+        """Sets the distance between the second and third joint.
+
+        Args:
+            * arm23_length (double): arm23_length > 0
+
+        Raises:
+            * ValueError: If arm23_length <= 0
+        
+        """
+
+        if not arm23_length > 0:
+            raise ValueError('The arm-length must not be negative or zero.')
+
+        self._arm23_length = arm23_length
+
+    def set_arm35_length(self, arm35_length):
+        """Sets the distance between the third joint and the robot's wrist.
+
+        Args:
+            * arm35_length (double): arm35_length > 0
+
+        Raises:
+            * ValueError: If arm35_length <= 0
+        
+        """
+
+        if not arm35_length > 0:
+            raise ValueError('The arm-length must not be negative or zero.')
+
+        self._arm35_length = arm35_length
+
+    def set_wrist_length(self, wrist_length):
+        """Sets the distance between the fifth and the sixth joint.
+
+        Args:
+            * wrist_length (double): wrist_length >= 0
+
+        Raises:
+            * ValueError: If wrist_length < 0
+        
+        """
+
+        if not wrist_length >= 0:
+            raise ValueError('The distance between the fifth and the sixth\
+                joint must not be negative.')
+
+        self._wrist_length = wrist_length
+
+    def set_endeffector_transform(self, transform):
+        """Defines a coordinate transformation for the endeffector's COS with
+        respect to the tool mount COS
+
+        Args:
+            * transform (coordinate_tools.Transformation): converts from
+            endeffector to tool mount coordinates
+
+        """
+        
+        self.end_effector_transform = transform
 
     def forward(self, angles):
         pass
