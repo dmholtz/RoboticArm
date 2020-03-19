@@ -132,6 +132,72 @@ class Coordinate():
 
         return np.allclose(np.dot(matrix, np.transpose(matrix)), np.eye(3))
 
+class RotationMatrix():
+
+    def __init__(self, rotation_vector):
+        """Accepts the rotation vector and prepares future calculations.
+
+        Args:
+            * rotation_vector (np.array): must be a 3x1 numpy vector
+
+        Raises_
+            * ValueError: if rotation_vector is not a valid vector
+
+        """
+        
+        if not Coordinate.valid_vector(rotation_vector):
+            raise ValueError('Rotation vector must be a 3x1 numpy array')
+
+        unit_vector = rotation_vector / np.linalg.norm(rotation_vector)
+        unit_vector = np.reshape(unit_vector, (3,1))
+        self._rotation_vector = unit_vector
+
+        # outer product of two vectors is a matrix
+        self._outer_product = np.dot(unit_vector, np.transpose(unit_vector))
+        self._cosine_matrix = np.eye(3) - self._outer_product
+        
+        uv1 = np.asscalar(unit_vector[0])
+        uv2 = np.asscalar(unit_vector[1])
+        uv3 = np.asscalar(unit_vector[2])
+        self._cross_matrix = np.array([[0,-uv3, uv2],[uv3,0,-uv1], \
+            [-uv2, uv1,0]])
+
+    @classmethod
+    def from_axis(cls, axis = 'z'):
+        """Returns a rotation matrix object for a given coordinate axis.
+
+        Args:
+            * axis (str): textual axis description
+        
+        Raises:
+            * ValueError: if textual description does not match any coordinate
+            axis
+
+        """
+        if axis == 'x' or axis == 'X':
+            return cls(np.array([1,0,0]))
+        if axis == 'y' or axis == 'Y':
+            return cls(np.array([0,1,0]))
+        if axis == 'z' or axis == 'Z':
+            return cls(np.array([0,0,1]))
+        else:
+            raise ValueError('Axis is not a coordinate axis.')
+
+    def matrix_at_angle(self, angle):
+        """Returns a rotation matrix for this instances axis for a given angle.
+
+        See:
+            * Formula "Rotation matrix from axis and angle": https://w.wiki/Knf
+
+        Args:
+            * angle (double): angle of the affine COS's rotation with respect 
+            to the reference COS
+        
+        """
+
+        return np.cos(angle) * self._cosine_matrix + self._outer_product + \
+            np.sin(angle) * self._cross_matrix
+
 class LinearAlgebraError(Exception):
     """Exception raised for invalid linear algebra operations related to 
     transformation process of cartesian cooridinate systems.
