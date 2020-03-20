@@ -91,6 +91,16 @@ class Kinematics():
 
         self._arm23_length = arm23_length
 
+    def set_joint4_offset(self, joint4_offset):
+         """Sets the x3 offset between the third and the forth joint.
+
+        Args:
+            * joint4_offset (double)
+
+        """
+
+        self._joint4_offset = joint4_offset
+
     def set_arm35_length(self, arm35_length):
         """Sets the distance between the third joint and the robot's wrist.
 
