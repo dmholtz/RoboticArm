@@ -60,6 +60,37 @@ class Transformation():
 
         return cls(np.eye(3), translation_vector)
 
+    def from_composition(cls, outer, inner):
+        """Returns a transformation object, which represent the compostion g∘f,
+        where f is the inner and g is the outer transformation function.
+
+        Args:
+            * outer (Transformation)
+            * inner (Transformation)
+
+        """
+
+        rotation_matrix = np.dot(outer.get_rotation(), \
+            inner.get_rotation())
+        translation_vector = np.dot(outer.get_rotation(), \
+            inner.get_translation()) + outer.get_translation()
+
+        return cls(rotation_matrix, translation_vector)
+
+    def get_rotation(self):
+        """Returns the rotation matrix.
+
+        """
+        
+        return self.__rotation_matrix
+
+    def get_translation(self):
+        """Returns the translation vector.
+
+        """
+
+        return self.__translation_vector
+
     def transform(self, affine_vector):
         """Transforms an affine vector to base coordinates.
 
@@ -77,7 +108,6 @@ class Transformation():
         
         return np.dot(self.__rotation_matrix, affine_vector) \
             + self.__translation_vector
-
 
     def retransform(self, base_vector):
         """Transforms an base vector to affine coordinates.

@@ -1,4 +1,5 @@
 from coordinate_tools import Transformation
+from coordinate_tools import RotationMatrix
 from coordinate_tools import Coordinate
 import numpy as np
 
@@ -8,7 +9,8 @@ class Kinematics():
     """
 
     def __init__(self, inertial_transformation):
-        """Initializes the robots coordinate system.
+        """Sets the interial coordinate system and initializes coordinate
+        systems for every joint.
 
         Args:
             * inertial_transformation (coordinate_tools.Transformation): 
@@ -17,6 +19,9 @@ class Kinematics():
 
         """
         self._inert_transform = inertial_transformation
+
+        self._initialize_rotation_matrices()
+        self._initialize_translation_vectors()
 
     @classmethod
     def from_origin(cls):
@@ -50,7 +55,7 @@ class Kinematics():
 
     def set_joint2_height(self, joint2_height):
         """Sets the verticle distance between this robot's COS origin and the
-        second joint.
+        second joint. Updates the corresponding translation vector.
 
         Args:
             * joint2_height (double): joint2_height >= 0
@@ -64,19 +69,23 @@ class Kinematics():
             raise ValueError('The verticle distance between this robots COS\
                 origin and the second joint must not be negative.')
 
-        self._joint2_height = joint2_height 
+        self._joint2_height = joint2_height
+        self._translation_vectors[1][2] = joint2_height
 
     def set_joint2_offset(self, joint2_offset):
         """Sets the horizontal offset between the first and the second joint.
+        Updates the corresponding translation vector.
 
         Args:
             * joint2_offset (double)
 
         """
         self._joint2_offset = joint2_offset
+        self._translation_vectors[1][0] = joint2_offset
     
     def set_arm23_length(self, arm23_length):
         """Sets the distance between the second and third joint.
+        Updates the corresponding translation vector.
 
         Args:
             * arm23_length (double): arm23_length > 0
@@ -90,9 +99,22 @@ class Kinematics():
             raise ValueError('The arm-length must not be negative or zero.')
 
         self._arm23_length = arm23_length
+        self._translation_vectors[2][2] = arm23_length
+
+    def set_joint4_offset(self, joint4_offset):
+        """Sets the x3 offset between the third and the forth joint. Updates
+        the corresponding translation vector.
+
+        Args:
+            * joint4_offset (double)
+
+        """
+        self._joint4_offset = joint4_offset
+        self._translation_vectors[3][0] = joint4_offset
 
     def set_arm35_length(self, arm35_length):
         """Sets the distance between the third joint and the robot's wrist.
+        Updates the corresponding translation vector.
 
         Args:
             * arm35_length (double): arm35_length > 0
@@ -106,9 +128,11 @@ class Kinematics():
             raise ValueError('The arm-length must not be negative or zero.')
 
         self._arm35_length = arm35_length
+        self._translation_vectors[4][2] = arm35_length
 
     def set_wrist_length(self, wrist_length):
-        """Sets the distance between the fifth and the sixth joint.
+        """Sets the distance between the fifth and the sixth joint. Updates the
+        corresponding translation vector.
 
         Args:
             * wrist_length (double): wrist_length >= 0
@@ -123,6 +147,7 @@ class Kinematics():
                 joint must not be negative.')
 
         self._wrist_length = wrist_length
+        self._translation_vectors[5][2] = wrist_length
 
     def set_endeffector_transform(self, transform):
         """Defines a coordinate transformation for the endeffector's COS with
@@ -137,11 +162,51 @@ class Kinematics():
         self.end_effector_transform = transform
 
     def forward(self, angles):
-        pass
+        """Return a coordinate transformation object, which transfers
+        end-effector coordinate into (inertial) world coordinates.
+
+        Sets up a coordinate transformation pipeline. Calculates the desired
+        transformation as a composition of 8 trn
+
+        Args:
+            * angles (np.array): 6x1 vector containing angles for each joint
+
+        Raises:
+            * ValueError: if angles is not a 6x1 numpy vector
+
+        """
+        
+        if not (angles.shape == (3,)) | (angles.shape == (3,1)):
+            raise ValueError('Angles must be a 6x1 numpy vector.')
+
+
 
     def inverse(self, to, end_effecotor_COS):
         pass
 
     def set_end_effector(self):
         pass
+
+    def _initialize_rotation_matrices(self):
+        """Initializes rotation matrices for every of the six joints and stores
+        them in a list.
+
+        """
+        self._rotation_matrices = list()
+
+        # Every rotation is described with respect to the previous rotation.
+        self._rotation_matrices.append(RotationMatrix.from_axis('z')) 
+        self._rotation_matrices.append(RotationMatrix.from_axis('y'))
+        self._rotation_matrices.append(RotationMatrix.from_axis('y'))
+        self._rotation_matrices.append(RotationMatrix.from_axis('z'))
+        self._rotation_matrices.append(RotationMatrix.from_axis('y'))
+        self._rotation_matrices.append(RotationMatrix.from_axis('z'))
+
+    def _initialize_translation_vectors(self):
+        """Initializes translation vectors for every of the six joints and
+        stores them in a list.
+
+        """
+
+        self._translation_vectors = [np.zeros(3) for i in range(6)]
 
