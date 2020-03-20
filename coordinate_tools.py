@@ -42,6 +42,24 @@ class Transformation():
         if calc_inverse:
             self.__inverse_transformation = self._calc_inverse_transformation()
 
+    @classmethod
+    def from_translation(cls, translation_vector):
+        """Returns a translation coordinate transformation. 
+
+        Args:
+            * translation_vector (np.array): 3x1 column vector which represents
+            the translation
+
+        Raises:
+            * ValueError: if translation_vector is not a valid 3x1 numpy vector
+
+        """
+
+        if not Coordinate.valid_vector(translation_vector):
+            raise ValueError('Translation vector must be a 3x1 numpy array')
+
+        return cls(np.eye(3), translation_vector)
+
     def transform(self, affine_vector):
         """Transforms an affine vector to base coordinates.
 
