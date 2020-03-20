@@ -60,6 +60,7 @@ class Transformation():
 
         return cls(np.eye(3), translation_vector)
 
+    @classmethod
     def from_composition(cls, outer, inner):
         """Returns a transformation object, which represent the compostion g∘f,
         where f is the inner and g is the outer transformation function.
