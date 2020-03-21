@@ -1,4 +1,4 @@
-from coordinate_tools import Transformation
+from coordinate_tools import Transformation as Transform
 from coordinate_tools import RotationMatrix
 from coordinate_tools import Coordinate
 import numpy as np
@@ -30,7 +30,7 @@ class Kinematics():
 
         """
 
-        transformation = Transformation(np.eye(3), np.zeros((3)))
+        transformation = Transform(np.eye(3), np.zeros((3)))
         return cls(transformation)
 
     @classmethod
@@ -50,7 +50,7 @@ class Kinematics():
         if not Coordinate.valid_vector(translation_vector):
             raise ValueError('Translation vector must be 3x1 numpy vector')
 
-        transformation = Transformation(np.eye(3), translation_vector)
+        transformation = Transform.from_translation(translation_vector)
         return cls(transformation)
 
     def set_joint2_height(self, joint2_height):
@@ -149,7 +149,7 @@ class Kinematics():
         self._wrist_length = wrist_length
         self._translation_vectors[5][2] = wrist_length
 
-    def set_endeffector_transform(self, transform):
+    def set_endeffector(self, transform):
         """Defines a coordinate transformation for the endeffector's COS with
         respect to the tool mount COS
 
@@ -159,14 +159,14 @@ class Kinematics():
 
         """
         
-        self.end_effector_transform = transform
+        self._end_effector_transform = transform
 
     def forward(self, angles):
         """Return a coordinate transformation object, which transfers
         end-effector coordinate into (inertial) world coordinates.
 
         Sets up a coordinate transformation pipeline. Calculates the desired
-        transformation as a composition of 8 trn
+        transformation as a composition of eight transformations
 
         Args:
             * angles (np.array): 6x1 vector containing angles for each joint
@@ -176,15 +176,28 @@ class Kinematics():
 
         """
         
-        if not (angles.shape == (3,)) | (angles.shape == (3,1)):
+        if not (angles.shape == (6,)) | (angles.shape == (6,1)):
             raise ValueError('Angles must be a 6x1 numpy vector.')
+        
+        pipeline = list()
+        pipeline.append(self._inert_transform)
 
+        for angle, rot_matrix, trans_vec in zip(angles, \
+            self._rotation_matrices, self._translation_vectors):
+            
+            transform = Transform(rot_matrix.matrix_at_angle(angle), trans_vec)
+            pipeline.append(transform)
 
+        pipeline.append(self._end_effector_transform)
+
+        # Initialize output with a identity transformation
+        output = Transform.from_translation(np.zeros(3))
+        for next_transform in pipeline:
+            output = Transform.from_composition(output, next_transform)
+
+        return output
 
     def inverse(self, to, end_effecotor_COS):
-        pass
-
-    def set_end_effector(self):
         pass
 
     def _initialize_rotation_matrices(self):
