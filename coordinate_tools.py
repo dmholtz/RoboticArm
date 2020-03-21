@@ -155,7 +155,7 @@ class Coordinate():
             * vector (numpy.array)
 
         """
-        return (vector.shape == (3,)) | (vector.shape == (3,1))
+        return (vector.shape == (3,)) or (vector.shape == (3,1))
 
     @staticmethod
     def valid_matrix(matrix):

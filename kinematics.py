@@ -176,7 +176,7 @@ class Kinematics():
 
         """
         
-        if not (angles.shape == (6,)) | (angles.shape == (6,1)):
+        if not (angles.shape == (6,)) or (angles.shape == (6,1)):
             raise ValueError('Angles must be a 6x1 numpy vector.')
         
         pipeline = list()
@@ -197,7 +197,7 @@ class Kinematics():
 
         return output
 
-    def inverse(self, to, end_effecotor_COS):
+    def inverse(self, transform):
         pass
 
     def _initialize_rotation_matrices(self):
