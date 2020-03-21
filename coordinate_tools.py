@@ -41,6 +41,8 @@ class Transformation():
         self.__translation_vector = translation_vector
         if calc_inverse:
             self.__inverse_transformation = self._calc_inverse_transformation()
+        else:
+            self.__inverse_transformation = None
 
     @classmethod
     def from_translation(cls, translation_vector):
@@ -92,6 +94,17 @@ class Transformation():
 
         return self.__translation_vector
 
+    def get_inverse(self):
+        """Returns the inverse transformation. Calculates this function if
+        necessary.
+
+        """
+
+        if self.__inverse_transformation is None:
+            self.__inverse_transformation = self._calc_inverse_transformation()
+        
+        return self.__inverse_transformation
+
     def transform(self, affine_vector):
         """Transforms an affine vector to base coordinates.
 
@@ -125,7 +138,7 @@ class Transformation():
             raise ValueError('Base vector must be a 3x1 dimensonal numpy \
                 array')
      
-        return self.__inverse_transformation.transform(base_vector)    
+        return self.__inverse_transformation.transform(base_vector) 
 
     def _calc_inverse_transformation(self):
         """Calculates the inverse transformation function of this object.

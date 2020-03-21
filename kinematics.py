@@ -1,6 +1,7 @@
 from coordinate_tools import Transformation as Transform
 from coordinate_tools import RotationMatrix
 from coordinate_tools import Coordinate
+import math
 import numpy as np
 
 class Kinematics():
@@ -198,7 +199,40 @@ class Kinematics():
         return output
 
     def inverse(self, transform):
-        pass
+        """Returns the angle of every joint so that the robotic arm's end-
+        effector reaches the desired point and has the desired orientation.
+
+        Args:
+            * transform (Transformation): COS transformation from world to
+            end-effector coordinates (contains origin + orientation)
+
+        Raises:
+            * KinematicError: If the desired setting of the robotic arm is
+            kinematically not possible.
+
+        """
+
+        angles = np.zeros(6) # Initialize the output vector
+
+        # Tool-center-point in world and robot coordinates
+        tcp_WC = transform.get_translation()
+        tcp_RC = self._inert_transform.retransform(tcp_WC)
+
+        # transformation from tool-center (=end-effector) to robot coordinates
+        RC_trans_TC = Transform.from_composition(\
+            self._inert_transform.get_inverse(), transform)
+
+        # transformation from joint 6 (=tool-mount) to robot coordinates
+        RC_trans_J6 = Transform.from_composition(RC_trans_TC, \
+            self._end_effector_transform.get_inverse())
+
+        j6_RC = RC_trans_J6.get_translation()
+        j5_RC = j6_RC - self._translation_vectors[5]
+
+        # Calculate the angle of the first joint
+        angles[0] = math.atan2(j5_RC[1], j5_RC[0])
+
+        return angles
 
     def _initialize_rotation_matrices(self):
         """Initializes rotation matrices for every of the six joints and stores
