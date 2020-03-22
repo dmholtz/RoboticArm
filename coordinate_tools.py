@@ -89,6 +89,25 @@ class Transformation():
 
         return cls(rotation_matrix, translation_vector)
 
+    @classmethod
+    def from_pipeline(cls, pipeline):
+        """Returns a transformation object, which represent the outcome of n
+        composed transformations, which are given in a pipeline.
+
+        Args:
+            * pipeline (list of Transformation objects): The list consists of 
+            zero to n transformations, which are sorted according to the
+            composition. The first element represents the outermost function and
+            the last element represents the innermost function.
+
+        """
+
+        result = Transformation.from_identity()
+        for next_transform in pipeline:
+            assert isinstance(next_transform, Transformation)
+            result = Transformation.from_composition(result, next_transform)
+        return result
+
     def get_rotation(self):
         """Returns the rotation matrix.
 

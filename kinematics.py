@@ -196,12 +196,7 @@ class Kinematics():
 
         pipeline.append(self._end_effector_transform)
 
-        # Initialize output with a identity transformation
-        output = Transform.from_identity()
-        for next_transform in pipeline:
-            output = Transform.from_composition(output, next_transform)
-
-        return output
+        return Transform.from_pipeline(pipeline)
 
     def inverse(self, transform):
         """Returns the angle of every joint so that the robotic arm's end-
@@ -256,7 +251,25 @@ class Kinematics():
             raise KinematicError('inverse kinematics', \
                 'Kinematic failed: robot cannot reach the desired position.')
         gamma_dot = math.atan(self._joint4_offset / self._arm35_length)
-        angles[2] = math.pi - gamma + gamma_dot
+        angles[2] = -math.pi + gamma - gamma_dot
+
+        # Similarly, using cosine sentence, calculate angle[1] (second joint)
+        j2j5_J2 = RC_trans_J1.retransform(j2j5_RC)
+        alpha_dot = math.atan2(j2j5_J2[2], j2j5_J2[0])
+        alpha = trig.cosine_sentence(self._arm23_length, j2j5_norm, j3j5_norm)
+        angles[1] = alpha + alpha_dot - math.pi / 2
+
+        pipeline = list()
+        for angle, rot_matrix, trans_vec in zip(angles[0:3], \
+            self._rotation_matrices, self._translation_vectors):
+            
+            transform = Transform(rot_matrix.matrix_at_angle(angle), trans_vec)
+            pipeline.append(transform)
+        RC_trans_J3 = Transform.from_pipeline(pipeline)
+
+        z3 = RC_trans_J3.get_rotation()[:,2] # extract z-column
+        z6 = RC_trans_J6.get_rotation()[:,2] # extract z-column
+        angles[4] = math.acos(np.dot(z3, z6))
 
         return angles
 
