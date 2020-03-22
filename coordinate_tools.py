@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 class Transformation():
     """Handles cartesian coordinate transformations.
@@ -61,6 +62,14 @@ class Transformation():
             raise ValueError('Translation vector must be a 3x1 numpy array')
 
         return cls(np.eye(3), translation_vector)
+
+    @classmethod
+    def from_identity(cls):
+        """Returns the identity coordinate transformation.
+
+        """
+
+        return cls(np.eye(3), np.zeros(3))
 
     @classmethod
     def from_composition(cls, outer, inner):
@@ -193,6 +202,27 @@ class Coordinate():
         """
 
         return np.allclose(np.dot(matrix, np.transpose(matrix)), np.eye(3))
+
+class Trigonometry():
+    """Provides some useful trigonometric formulas.
+
+    """
+
+    @staticmethod
+    def cosine_sentence(a, b, c):
+        """Returns gamma from a Triangle abc by applying the cosine sentence.
+
+        Args:
+            * a, b, c (double): lengths of the triangle: a, b, c > 0
+
+        Raises:
+            * ValueError: If any of the parameters is less or equal than zero
+
+        """
+        if a <= 0 or b <= 0 or c <= 0:
+            raise ValueError('Every length in a triangle has to be greater than\
+                 0')
+        return math.acos((a*a+b*b-c*c)/(2*a*b))
 
 class RotationMatrix():
 

@@ -1,6 +1,7 @@
 from coordinate_tools import Transformation as Transform
 from coordinate_tools import RotationMatrix
 from coordinate_tools import Coordinate
+from coordinate_tools import Trigonometry as trig
 import math
 import numpy as np
 
@@ -23,6 +24,7 @@ class Kinematics():
 
         self._initialize_rotation_matrices()
         self._initialize_translation_vectors()
+        self._default_geometry(reset=True)
 
     @classmethod
     def from_origin(cls):
@@ -31,8 +33,7 @@ class Kinematics():
 
         """
 
-        transformation = Transform(np.eye(3), np.zeros((3)))
-        return cls(transformation)
+        return cls(Transform.from_identity())
 
     @classmethod
     def from_translation(cls, translation_vector):
@@ -152,22 +153,26 @@ class Kinematics():
 
     def set_endeffector(self, transform):
         """Defines a coordinate transformation for the endeffector's COS with
-        respect to the tool mount COS
+        respect to the tool mount COS.
 
         Args:
             * transform (coordinate_tools.Transformation): converts from
             endeffector to tool mount coordinates
 
         """
+
+        if transform is None:
+            self._end_effector_transform = Transform.from_identity()
         
         self._end_effector_transform = transform
 
     def forward(self, angles):
         """Return a coordinate transformation object, which transfers
-        end-effector coordinate into (inertial) world coordinates.
+        end-effector coordinate into (inertial) world coordinates for the given
+        setting of angles.
 
         Sets up a coordinate transformation pipeline. Calculates the desired
-        transformation as a composition of eight transformations
+        transformation as a composition of eight transformations.
 
         Args:
             * angles (np.array): 6x1 vector containing angles for each joint
@@ -192,7 +197,7 @@ class Kinematics():
         pipeline.append(self._end_effector_transform)
 
         # Initialize output with a identity transformation
-        output = Transform.from_translation(np.zeros(3))
+        output = Transform.from_identity()
         for next_transform in pipeline:
             output = Transform.from_composition(output, next_transform)
 
@@ -212,9 +217,13 @@ class Kinematics():
 
         """
 
+        if not self.is_initialized():
+            raise KinematicError('inverse kinematics', \
+                'Information missing - complete initialization before calling.')
+
         angles = np.zeros(6) # Initialize the output vector
 
-        # Tool-center-point in world and robot coordinates
+        # Tool-center-point (tcp) in world and robot coordinates
         tcp_WC = transform.get_translation()
         tcp_RC = self._inert_transform.retransform(tcp_WC)
 
@@ -232,7 +241,41 @@ class Kinematics():
         # Calculate the angle of the first joint
         angles[0] = math.atan2(j5_RC[1], j5_RC[0])
 
+        RC_rot_J1 = self._rotation_matrices[0].matrix_at_angle(angles[0])
+        RC_trans_J1 = Transform(RC_rot_J1, np.zeros(3))
+        j2_RC = RC_trans_J1.transform(self._translation_vectors[1])
+
+        # Using cosine sentence, calculate the angle[2] (third joint)
+        j2j5_RC = j5_RC - j2_RC
+        j2j5_norm = np.linalg.norm(j2j5_RC)
+        j3j5_norm = np.hypot(self._joint4_offset, self._arm35_length)
+        try:
+            gamma = trig.cosine_sentence(j3j5_norm, self._arm23_length, \
+                j2j5_norm)
+        except:
+            raise KinematicError('inverse kinematics', \
+                'Kinematic failed: robot cannot reach the desired position.')
+        gamma_dot = math.atan(self._joint4_offset / self._arm35_length)
+        angles[2] = math.pi - gamma + gamma_dot
+
         return angles
+
+    def is_initialized(self):
+        """Returns true if the all the required geometry information has been 
+        provided. Does NEITHER assess correctness NOR completeness of this 
+        robot's geometric representation.
+
+        """
+
+        if self._arm23_length <= 0:
+            return False
+        if self._arm35_length <= 0:
+            return False
+        if self._wrist_length < 0:
+            return False
+        if self._end_effector_transform is None:
+            return False
+        return True
 
     def _initialize_rotation_matrices(self):
         """Initializes rotation matrices for every of the six joints and stores
@@ -256,4 +299,41 @@ class Kinematics():
         """
 
         self._translation_vectors = [np.zeros(3) for i in range(6)]
+
+    def _default_geometry(self, reset = False):
+        """Sets the default geometry. Resets all the geometry settings (opt).
+
+        Warning:
+            * reset = True ==> self.is_initialized == False
+
+        """
+
+        self.set_joint2_height(0)
+        self.set_joint2_offset(0)
+        self.set_joint4_offset(0)
+        
+        if reset:
+            self._arm35_length = -1
+            self._arm23_length = -1
+            self._wrist_length = -1
+            self._end_effector_transform = None
+
+class KinematicError(Exception):
+    """Represents errors of illegal states or calls on Kinematics objects.
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, sender, message):
+        self.sender = sender
+        self.message = message
+
+    def __str__(self):
+        err_msg = ""
+        err_msg += '\033[93m'+'Kinematic error \033[0m@'+self.sender+'\n'
+        err_msg += '\033[93m'+self.message+'\033[0m'
+        return err_msg
+    
+
 
