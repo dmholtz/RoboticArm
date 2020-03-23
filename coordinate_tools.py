@@ -267,9 +267,9 @@ class RotationMatrix():
         self._outer_product = np.dot(unit_vector, np.transpose(unit_vector))
         self._cosine_matrix = np.eye(3) - self._outer_product
         
-        uv1 = np.asscalar(unit_vector[0])
-        uv2 = np.asscalar(unit_vector[1])
-        uv3 = np.asscalar(unit_vector[2])
+        uv1 = np.ndarray.item(unit_vector[0])
+        uv2 = np.ndarray.item(unit_vector[1])
+        uv3 = np.ndarray.item(unit_vector[2])
         self._cross_matrix = np.array([[0,-uv3, uv2],[uv3,0,-uv1], \
             [-uv2, uv1,0]])
 

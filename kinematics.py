@@ -112,7 +112,7 @@ class Kinematics():
 
         """
         self._joint4_offset = joint4_offset
-        self._translation_vectors[3][0] = joint4_offset
+        self._translation_vectors[3][0] = -joint4_offset
 
     def set_arm35_length(self, arm35_length):
         """Sets the distance between the third joint and the robot's wrist.
@@ -230,14 +230,14 @@ class Kinematics():
         RC_trans_J6 = Transform.from_composition(RC_trans_TC, \
             self._end_effector_transform.get_inverse())
 
-        j6_RC = RC_trans_J6.get_translation()
-        j5_RC = j6_RC - self._translation_vectors[5]
+        # transform j5j6_J5 = -j5j6_J6 into RC coordinates
+        j5_RC = RC_trans_J6.transform(-self._translation_vectors[5])
 
         # Calculate the angle of the first joint
         angles[0] = math.atan2(j5_RC[1], j5_RC[0])
 
         RC_rot_J1 = self._rotation_matrices[0].matrix_at_angle(angles[0])
-        RC_trans_J1 = Transform(RC_rot_J1, np.zeros(3))
+        RC_trans_J1 = Transform(RC_rot_J1, self._translation_vectors[0])
         j2_RC = RC_trans_J1.transform(self._translation_vectors[1])
 
         # Using cosine sentence, calculate the angle[2] (third joint)
@@ -254,8 +254,8 @@ class Kinematics():
         angles[2] = math.pi - gamma + gamma_dot
 
         # Similarly, using cosine sentence, calculate angle[1] (second joint)
-        j2j5_J2 = RC_trans_J1.retransform(j2j5_RC)
-        alpha_dot = math.atan2(j2j5_J2[2], j2j5_J2[0])
+        j2j5_J1 = RC_trans_J1.retransform(j2j5_RC)
+        alpha_dot = math.atan2(j2j5_J1[2], j2j5_J1[0])
         alpha = trig.cosine_sentence(self._arm23_length, j2j5_norm, j3j5_norm)
         angles[1] = math.pi/ 2 - alpha - alpha_dot
 
@@ -269,9 +269,8 @@ class Kinematics():
 
         z3 = RC_trans_J3.get_rotation()[:,2] # extract z-column
         z6 = RC_trans_J6.get_rotation()[:,2] # extract z-column
-        angles[4] = math.acos(np.dot(z3, z6))
+        angles[4] = -math.acos(np.dot(z3, z6))
 
-        
         y3 = RC_trans_J3.get_rotation()[:,1] # extract y-column
         # TODO case when phi5 = 0 => np.cross(z6,z3) = 0 divided by 0
         c = np.cross(z6, z3)
@@ -289,7 +288,7 @@ class Kinematics():
         RC_trans_J5 = Transform.from_pipeline(pipeline)
         y5 = RC_trans_J5.get_rotation()[:,1] # extract y-column
         y6 = RC_trans_J6.get_rotation()[:,1] # extract y-column
-        angles[5] = math.acos(np.dot(y5, y6))
+        angles[5] = math.acos(np.dot(y5, y6).round(decimals=8))
 
         return angles
 
