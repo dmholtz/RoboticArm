@@ -251,13 +251,13 @@ class Kinematics():
             raise KinematicError('inverse kinematics', \
                 'Kinematic failed: robot cannot reach the desired position.')
         gamma_dot = math.atan(self._joint4_offset / self._arm35_length)
-        angles[2] = -math.pi + gamma - gamma_dot
+        angles[2] = math.pi - gamma + gamma_dot
 
         # Similarly, using cosine sentence, calculate angle[1] (second joint)
         j2j5_J2 = RC_trans_J1.retransform(j2j5_RC)
         alpha_dot = math.atan2(j2j5_J2[2], j2j5_J2[0])
         alpha = trig.cosine_sentence(self._arm23_length, j2j5_norm, j3j5_norm)
-        angles[1] = alpha + alpha_dot - math.pi / 2
+        angles[1] = math.pi/ 2 - alpha - alpha_dot
 
         pipeline = list()
         for angle, rot_matrix, trans_vec in zip(angles[0:3], \
@@ -270,6 +270,26 @@ class Kinematics():
         z3 = RC_trans_J3.get_rotation()[:,2] # extract z-column
         z6 = RC_trans_J6.get_rotation()[:,2] # extract z-column
         angles[4] = math.acos(np.dot(z3, z6))
+
+        
+        y3 = RC_trans_J3.get_rotation()[:,1] # extract y-column
+        # TODO case when phi5 = 0 => np.cross(z6,z3) = 0 divided by 0
+        c = np.cross(z6, z3)
+        c = c / np.linalg.norm(c)
+        angles[3] = math.acos(np.dot(c, y3))
+
+        pipeline = list() # pipeline for RC_trans_J5
+        pipeline.append(RC_trans_J3)
+        # add J3_transJ4 and J4_trans_J5 to pipeline
+        for angle, rot_matrix, trans_vec in zip(angles[3:5], \
+            self._rotation_matrices[3:5], self._translation_vectors[3:5]):
+            
+            transform = Transform(rot_matrix.matrix_at_angle(angle), trans_vec)
+            pipeline.append(transform)
+        RC_trans_J5 = Transform.from_pipeline(pipeline)
+        y5 = RC_trans_J5.get_rotation()[:,1] # extract y-column
+        y6 = RC_trans_J6.get_rotation()[:,1] # extract y-column
+        angles[5] = math.acos(np.dot(y5, y6))
 
         return angles
 
