@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 class Transformation():
     """Handles cartesian coordinate transformations.
@@ -41,6 +42,8 @@ class Transformation():
         self.__translation_vector = translation_vector
         if calc_inverse:
             self.__inverse_transformation = self._calc_inverse_transformation()
+        else:
+            self.__inverse_transformation = None
 
     @classmethod
     def from_translation(cls, translation_vector):
@@ -61,6 +64,14 @@ class Transformation():
         return cls(np.eye(3), translation_vector)
 
     @classmethod
+    def from_identity(cls):
+        """Returns the identity coordinate transformation.
+
+        """
+
+        return cls(np.eye(3), np.zeros(3))
+
+    @classmethod
     def from_composition(cls, outer, inner):
         """Returns a transformation object, which represent the compostion g∘f,
         where f is the inner and g is the outer transformation function.
@@ -78,6 +89,25 @@ class Transformation():
 
         return cls(rotation_matrix, translation_vector)
 
+    @classmethod
+    def from_pipeline(cls, pipeline):
+        """Returns a transformation object, which represent the outcome of n
+        composed transformations, which are given in a pipeline.
+
+        Args:
+            * pipeline (list of Transformation objects): The list consists of 
+            zero to n transformations, which are sorted according to the
+            composition. The first element represents the outermost function and
+            the last element represents the innermost function.
+
+        """
+
+        result = Transformation.from_identity()
+        for next_transform in pipeline:
+            assert isinstance(next_transform, Transformation)
+            result = Transformation.from_composition(result, next_transform)
+        return result
+
     def get_rotation(self):
         """Returns the rotation matrix.
 
@@ -91,6 +121,17 @@ class Transformation():
         """
 
         return self.__translation_vector
+
+    def get_inverse(self):
+        """Returns the inverse transformation. Calculates this function if
+        necessary.
+
+        """
+
+        if self.__inverse_transformation is None:
+            self.__inverse_transformation = self._calc_inverse_transformation()
+        
+        return self.__inverse_transformation
 
     def transform(self, affine_vector):
         """Transforms an affine vector to base coordinates.
@@ -125,7 +166,7 @@ class Transformation():
             raise ValueError('Base vector must be a 3x1 dimensonal numpy \
                 array')
      
-        return self.__inverse_transformation.transform(base_vector)    
+        return self.__inverse_transformation.transform(base_vector) 
 
     def _calc_inverse_transformation(self):
         """Calculates the inverse transformation function of this object.
@@ -155,7 +196,7 @@ class Coordinate():
             * vector (numpy.array)
 
         """
-        return (vector.shape == (3,)) | (vector.shape == (3,1))
+        return (vector.shape == (3,)) or (vector.shape == (3,1))
 
     @staticmethod
     def valid_matrix(matrix):
@@ -181,6 +222,27 @@ class Coordinate():
 
         return np.allclose(np.dot(matrix, np.transpose(matrix)), np.eye(3))
 
+class Trigonometry():
+    """Provides some useful trigonometric formulas.
+
+    """
+
+    @staticmethod
+    def cosine_sentence(a, b, c):
+        """Returns gamma from a Triangle abc by applying the cosine sentence.
+
+        Args:
+            * a, b, c (double): lengths of the triangle: a, b, c > 0
+
+        Raises:
+            * ValueError: If any of the parameters is less or equal than zero
+
+        """
+        if a <= 0 or b <= 0 or c <= 0:
+            raise ValueError('Every length in a triangle has to be greater than\
+                 0')
+        return math.acos((a*a+b*b-c*c)/(2*a*b))
+
 class RotationMatrix():
 
     def __init__(self, rotation_vector):
@@ -205,9 +267,9 @@ class RotationMatrix():
         self._outer_product = np.dot(unit_vector, np.transpose(unit_vector))
         self._cosine_matrix = np.eye(3) - self._outer_product
         
-        uv1 = np.asscalar(unit_vector[0])
-        uv2 = np.asscalar(unit_vector[1])
-        uv3 = np.asscalar(unit_vector[2])
+        uv1 = np.ndarray.item(unit_vector[0])
+        uv2 = np.ndarray.item(unit_vector[1])
+        uv3 = np.ndarray.item(unit_vector[2])
         self._cross_matrix = np.array([[0,-uv3, uv2],[uv3,0,-uv1], \
             [-uv2, uv1,0]])
 
