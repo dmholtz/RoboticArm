@@ -272,10 +272,13 @@ class Kinematics():
         angles[4] = -math.acos(np.dot(z3, z6))
 
         y3 = RC_trans_J3.get_rotation()[:,1] # extract y-column
-        # TODO case when phi5 = 0 => np.cross(z6,z3) = 0 divided by 0
         c = np.cross(z6, z3)
-        c = c / np.linalg.norm(c)
-        angles[3] = math.acos(np.dot(c, y3))
+        if not np.allclose(c, np.zeros(3)):
+            c = c / np.linalg.norm(c)
+            angles[3] = math.acos(np.dot(c, y3).round(decimals=12))
+        else:
+            print('Zero case occured')
+            angles[3] = 0
 
         pipeline = list() # pipeline for RC_trans_J5
         pipeline.append(RC_trans_J3)
@@ -286,9 +289,13 @@ class Kinematics():
             transform = Transform(rot_matrix.matrix_at_angle(angle), trans_vec)
             pipeline.append(transform)
         RC_trans_J5 = Transform.from_pipeline(pipeline)
-        y5 = RC_trans_J5.get_rotation()[:,1] # extract y-column
-        y6 = RC_trans_J6.get_rotation()[:,1] # extract y-column
-        angles[5] = math.acos(np.dot(y5, y6).round(decimals=8))
+        J5_trans_J6 = Transform.from_composition(RC_trans_J5.get_inverse(),\
+            RC_trans_J6)
+        abs_phi6 = math.acos(J5_trans_J6.get_rotation()[0,0])
+        if J5_trans_J6.get_rotation()[1,0] > 0:
+            angles[5] = abs_phi6
+        else:
+            angles[5] = -abs_phi6
 
         return angles
 
