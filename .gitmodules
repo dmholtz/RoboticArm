@@ -1,3 +1,0 @@
-[submodule "serial-python-to-arduino"]
-	path = serial-python-to-arduino
-	url = https://github.com/dmholtz/serial-python-to-arduino.git
