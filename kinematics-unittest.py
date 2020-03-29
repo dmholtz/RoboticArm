@@ -67,15 +67,15 @@ class DifferentialTest(unittest.TestCase):
             rot_mat = RotationMatrix(np.random.rand(3))
             orientation_mat = rot_mat.matrix_at_angle(random.random())
             target_location = np.ones(3)*100+np.random.rand(3)*40
-            target = Transformation(orientation_mat, target_location, \
+            expected = Transformation(orientation_mat, target_location, \
                 calc_inverse=False)
     
-            angles = k.inverse(target)
-            target = k.forward(angles)
+            angles = k.inverse(expected)
+            actual = k.forward(angles)
 
             # numerical errors might occur
             #if not np.allclose(target.get_rotation(), orientation_mat):
             #    print(target.get_rotation() - orientation_mat)
-            assert np.allclose(target.get_rotation(), orientation_mat) 
-            assert np.allclose(target.get_translation(), target_location)
+            assert np.allclose(actual.get_rotation(), orientation_mat) 
+            assert np.allclose(actual.get_translation(), target_location)
 

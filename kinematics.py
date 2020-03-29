@@ -218,10 +218,6 @@ class Kinematics():
 
         angles = np.zeros(6) # Initialize the output vector
 
-        # Tool-center-point (tcp) in world and robot coordinates
-        tcp_WC = transform.get_translation()
-        tcp_RC = self._inert_transform.retransform(tcp_WC)
-
         # transformation from tool-center (=end-effector) to robot coordinates
         RC_trans_TC = Transform.from_composition(\
             self._inert_transform.get_inverse(), transform)
